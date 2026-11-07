@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AI Movie Summarizer & Title Maker — မြန်မာဇာတ်ကားခေါင်းစဉ် နှင့် ဇာတ်လမ်းအကျဉ်း</title>
+  <meta name="description" content="ဗီဒီယို ဇာတ်ကားတစ်ကားလုံး ထည့်လိုက်ရုံဖြင့် မြန်မာဇာတ်ကားခေါင်းစဉ်များနှင့် ဇာတ်လမ်းအကျဉ်းချုပ် (Movie Recap) ထုတ်ပေးသည့် Local + AI Web Tool" />
+  <meta name="theme-color" content="#0d1b13" id="metaThemeColor" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Inter & Noto Sans Myanmar -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Dark Emerald Theme (Matches Local Video Splitter UI) */
+      --bg-outer: #0d1b13;
+      --bg-card: #16261d;
+      --bg-panel: #1b2e23;
+      --bg-input: #101d15;
+      --bg-icon: #243a2d;
+      --bg-summary: #24382c;
+      --border-color: #2c4637;
+      --border-subtle: #23392c;
+      --border-active: #76a889;
+      --text-main: #eef5f0;
+      --text-muted: #93ab9c;
+      --text-accent: #78a98a;
+      --btn-primary-bg: #527a61;
+      --btn-primary-hover: #5e896e;
+      --btn-primary-text: #0b1710;
+      --btn-active-bg: #233b2d;
+      --progress-track: #27382e;
+      --progress-fill: #80b494;
+      --shadow-card: 0 20px 50px rgba(0, 0, 0, 0.45);
+    }
+
+    body.light-theme {
+      /* Warm Rose / Cream Light Theme */
+      --bg-outer: #efe6e4;
+      --bg-card: #f5ecea;
+      --bg-panel: #ece0dd;
+      --bg-input: #e5d6d2;
+      --bg-icon: #e6d4d0;
+      --bg-summary: #e6d5d2;
+      --border-color: #d8c3be;
+      --border-subtle: #dfccc7;
+      --border-active: #7c283a;
+      --text-main: #2a181c;
+      --text-muted: #7b6569;
+      --text-accent: #7c283a;
+      --btn-primary-bg: #7c283a;
+      --btn-primary-hover: #692030;
+      --btn-primary-text: #ffffff;
+      --btn-active-bg: #ead8d5;
+      --progress-track: #d9c5c0;
+      --progress-fill: #7c283a;
+      --shadow-card: 0 16px 40px rgba(68, 32, 39, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Inter', 'Noto Sans Myanmar', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-outer);
+      color: var(--text-main);
+      margin: 0;
+      padding: 16px 12px 56px;
+      min-height: 100vh;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    .app-shell {
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .surface-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 26px;
+      padding: 22px 18px;
+      box-shadow: var(--shadow-card);
+      transition: background-color 0.25s ease, border-color 0.25s ease;
+    }
+
+    .inner-panel {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 18px 16px;
+      transition: background-color 0.25s ease, border-color 0.25s ease;
+    }
+
+    .icon-badge {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background-color: var(--bg-icon);
+      color: var(--text-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step-pill {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background-color: var(--bg-icon);
+      color: var(--text-accent);
+      font-size: 13px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .upload-dropzone {
+      border: 1.5px dashed var(--border-color);
+      background-color: rgba(255, 255, 255, 0.01);
+      border-radius: 18px;
+      padding: 30px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .upload-dropzone:hover,
+    .upload-dropzone.dragover {
+      border-color: var(--border-active);
+      background-color: var(--btn-active-bg);
+    }
+
+    .option-btn {
+      background-color: transparent;
+      color: var(--text-main);
+      border: 1.2px solid var(--border-color);
+      border-radius: 14px;
+      padding: 12px 10px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      text-align: left;
+      line-height: 1.45;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .option-btn.active {
+      background-color: var(--btn-active-bg);
+      border-color: var(--border-active);
+    }
+
+    .option-btn .opt-title {
+      color: var(--text-main);
+      font-weight: 700;
+    }
+
+    .option-btn.active .opt-title {
+      color: var(--text-accent);
+    }
+
+    .option-btn .opt-desc {
+      font-size: 11.5px;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    .preset-chip {
+      background-color: transparent;
+      color: var(--text-main);
+      border: 1.2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 9px 13px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      flex: 1;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .preset-chip.active {
+      background-color: var(--btn-active-bg);
+      border-color: var(--border-active);
+      color: var(--text-accent);
+    }
+
+    .dark-input-box {
+      background-color: var(--bg-input);
+      border: 1.2px solid var(--border-color);
+      border-radius: 14px;
+      padding: 11px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: border-color 0.2s ease;
+    }
+
+    .dark-input-box:focus-within {
+      border-color: var(--border-active);
+    }
+
+    .dark-input-box input,
+    .dark-input-box textarea {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-main);
+      font-size: 14px;
+      width: 100%;
+      line-height: 1.6;
+    }
+
+    .summary-banner {
+      background-color: var(--bg-summary);
+      border-radius: 16px;
+      padding: 15px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .primary-action-btn {
+      width: 100%;
+      background-color: var(--btn-primary-bg);
+      color: var(--btn-primary-text);
+      border: none;
+      border-radius: 14px;
+      padding: 15px 18px;
+      font-size: 15.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: background-color 0.2s ease, opacity 0.2s ease;
+    }
+
+    .primary-action-btn:hover:not(:disabled) {
+      background-color: var(--btn-primary-hover);
+    }
+
+    .primary-action-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .secondary-action-btn {
+      background-color: var(--bg-panel);
+      color: var(--text-main);
+      border: 1.2px solid var(--border-color);
+      border-radius: 13px;
+      padding: 12px 14px;
+      font-size: 13.5px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .secondary-action-btn:hover:not(:disabled) {
+      border-color: var(--border-active);
+      background-color: var(--btn-active-bg);
+    }
+
+    .video-frame {
+      width: 100%;
+      height: 215px;
+      background-color: #000000;
+      border-radius: 16px;
+      overflow: hidden;
+      display: block;
+      object-fit: contain;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .spinner-ring {
+      width: 18px;
+      height: 18px;
+      border: 2.4px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      flex-shrink: 0;
+    }
+
+    /* Horizontal Filmstrip for Captured Movie Keyframes */
+    .filmstrip-scroll {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      scroll-behavior: smooth;
+    }
+
+    .filmstrip-scroll::-webkit-scrollbar {
+      height: 5px;
+    }
+
+    .filmstrip-scroll::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 99px;
+    }
+
+    .scene-thumb-card {
+      flex-shrink: 0;
+      width: 116px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1.2px solid var(--border-color);
+      background-color: var(--bg-input);
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .scene-thumb-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-active);
+    }
+
+    .scene-thumb-card img {
+      width: 100%;
+      height: 66px;
+      object-fit: cover;
+      display: block;
+      background: #000;
+    }
+
+    /* Formatted Summary Output Reader */
+    .summary-reader {
+      background-color: var(--bg-panel);
+      border: 1.2px solid var(--border-color);
+      border-radius: 18px;
+      padding: 18px 16px;
+      line-height: 1.85;
+      font-size: 14.5px;
+      color: var(--text-main);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .summary-reader h3 {
+      color: var(--text-accent);
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 4px;
+    }
+
+    .summary-reader h3:first-child {
+      margin-top: 0;
+    }
+
+    .summary-reader strong {
+      color: var(--text-accent);
+      font-weight: 700;
+    }
+
+    /* Title Style Multi-Select Chip */
+    .title-style-chip {
+      background-color: transparent;
+      color: var(--text-main);
+      border: 1.2px solid var(--border-color);
+      border-radius: 13px;
+      padding: 10px 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      line-height: 1.4;
+    }
+
+    .title-style-chip.active {
+      background-color: var(--btn-active-bg);
+      border-color: var(--border-active);
+      color: var(--text-accent);
+    }
+
+    .title-card-item {
+      background-color: var(--bg-panel);
+      border: 1.2px solid var(--border-color);
+      border-radius: 16px;
+      padding: 14px;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .title-card-item.selected-title {
+      border-color: var(--border-active);
+      background-color: var(--btn-active-bg);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- Top Utility Bar: Demo Movie, API Key, Download HTML for GitHub Pages, Theme Switcher -->
+    <div class="flex flex-wrap items-center justify-between gap-1.5 px-1 text-xs">
+      <div class="flex items-center gap-1.5">
+        <button id="loadDemoMovieBtn" type="button" class="px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition hover:opacity-90" style="border-color: var(--border-color); background-color: var(--bg-card); color: var(--text-main);">
+          🎬 Demo ဇာတ်ကား
+        </button>
+        <button id="topApiKeyBtn" type="button" class="px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition hover:opacity-90" style="border-color: var(--border-color); background-color: var(--bg-card); color: var(--text-main);">
+          🔑 API Key
+        </button>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <button id="downloadHtmlBtn" type="button" class="px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition hover:opacity-90" style="border-color: var(--border-color); background-color: var(--bg-card); color: var(--text-accent);" title="GitHub Pages တွင် တင်ရန် index.html ဒေါင်းလုဒ်ဆွဲမည်">
+          📥 Website တင်ရန် HTML ဒေါင်းမည်
+        </button>
+        <button id="themeBtn" type="button" class="px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition hover:opacity-90" style="border-color: var(--border-color); background-color: var(--bg-card); color: var(--text-main);">
+          Light / Dark
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN CARD -->
+    <div class="surface-card">
+
+      <!-- App Header -->
+      <div class="flex items-start gap-4 mb-6">
+        <div class="icon-badge">
+          <!-- Movie Clapperboard / Sparkles Icon -->
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+            <line x1="7" y1="2" x2="7" y2="22"></line>
+            <line x1="17" y1="2" x2="17" y2="22"></line>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <line x1="2" y1="7" x2="7" y2="7"></line>
+            <line x1="2" y1="17" x2="7" y2="17"></line>
+            <line x1="17" y1="17" x2="22" y2="17"></line>
+            <line x1="17" y1="7" x2="22" y2="7"></line>
+          </svg>
+        </div>
+        <div>
+          <div class="text-xs font-semibold tracking-widest uppercase" style="color: var(--text-accent);">LOCAL + AI TOOL</div>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight mt-0.5 mb-1.5" style="color: var(--text-main);">AI Movie Summarizer & Title Maker</h1>
+          <p class="text-sm leading-relaxed" style="color: var(--text-muted);">
+            ဇာတ်ကားတစ်ကားလုံး ထည့်လိုက်ရုံဖြင့် ဆွဲဆောင်မှုရှိသော <strong>မြန်မာဇာတ်ကားခေါင်းစဉ်များ</strong> နှင့် <strong>ဇာတ်လမ်းအကျဉ်းချုပ်</strong> ကို ထုတ်ပေးပါမည်။
+          </p>
+        </div>
+      </div>
+
+      <!-- STEP 01: VIDEO UPLOAD & ORIGINAL TITLE HINT -->
+      <div class="flex items-center gap-3 mb-3.5">
+        <span class="step-pill">01</span>
+        <h2 class="text-lg font-bold" style="color: var(--text-main);">Video ဇာတ်ကား ထည့်ပါ</h2>
+      </div>
+
+      <input type="file" id="videoFileInput" accept="video/*,.mp4,.mkv,.mov,.webm" class="hidden" />
+
+      <div id="uploadDropzone" class="upload-dropzone">
+        <div class="w-12 h-12 rounded-2xl mx-auto mb-3 flex items-center justify-center" style="background-color: var(--bg-icon); color: var(--text-accent);">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 16l-4-4-4 4"></path>
+            <path d="M12 12v9"></path>
+            <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"></path>
+          </svg>
+        </div>
+        <div id="selectedFileName" class="text-base font-bold break-all mb-1" style="color: var(--text-main);">
+          ဇာတ်ကား Video ဖိုင် ရွေးချယ်ရန် နှိပ်ပါ
+        </div>
+        <div id="selectedFileSubtext" class="text-xs" style="color: var(--text-muted);">
+          ဖိုင်ဆိုဒ် 500MB မှ 3GB+ ဇာတ်ကားရှည်များလည်း Server တင်ရန်မလိုဘဲ ထည့်သွင်းနိုင်ပါသည်
+        </div>
+      </div>
+
+      <!-- ORIGINAL VIDEO PREVIEW -->
+      <div id="originalPreviewWrapper" class="mt-5 hidden">
+        <div class="flex items-center justify-between mb-2.5">
+          <div class="flex items-center gap-2 text-sm font-bold" style="color: var(--text-main);">
+            <span>🎞️ မူရင်း Video Preview</span>
+          </div>
+          <div id="originalMetaText" class="text-xs font-medium" style="color: var(--text-muted);">
+            00:00:00 · 0.0 MB
+          </div>
+        </div>
+
+        <video id="originalVideoPlayer" class="video-frame" controls playsinline preload="metadata"></video>
+      </div>
+
+      <!-- NEW DIRECT INPUT: ORIGINAL MOVIE TITLE OR HINT -->
+      <div class="mt-4 p-3.5 rounded-2xl border" style="border-color: var(--border-color); background-color: var(--bg-panel);">
+        <label for="movieExtraNotes" class="block text-xs font-bold mb-1.5" style="color: var(--text-main);">
+          🏷️ မူရင်းဇာတ်ကားအမည် သို့မဟုတ် ဇာတ်လမ်းအရိပ်အမြွက် (Optional)
+        </label>
+        <div class="dark-input-box">
+          <input type="text" id="movieExtraNotes" placeholder="ဥပမာ - The Karate Kid / ချမ်းသာချင်သော လူငယ်လေးအကြောင်း (မထည့်လည်း ရပါသည်)..." />
+        </div>
+        <p class="text-[11.5px] mt-1.5 leading-relaxed" style="color: var(--text-muted);">
+          ဗီဒီယိုထည့်ထားပါက ဇာတ်ဝင်ခန်းများမှ အလိုအလျောက် ခေါင်းစဉ်ပေးပါမည်။ ဗီဒီယိုမထည့်ဘဲ ဇာတ်ကားအမည်/အကြောင်းအရာ ရိုက်ထည့်ရုံဖြင့်လည်း မြန်မာခေါင်းစဉ်များ သီးသန့်ထုတ်နိုင်ပါသည်။
+        </p>
+
+        <!-- OPTIONAL SUBTITLE (.SRT/.VTT) -->
+        <div class="mt-3 pt-2.5 border-t flex items-center justify-between gap-2 flex-wrap" style="border-color: var(--border-color);">
+          <div class="text-xs font-semibold" style="color: var(--text-main);">
+            📄 Subtitle စာတန်းထိုးဖိုင် (.srt / .vtt) ရှိလျှင် ထည့်ရန်
+          </div>
+          <input type="file" id="subtitleFileInput" accept=".srt,.vtt,.txt" class="hidden" />
+          <div class="flex items-center gap-2">
+            <button id="pickSubtitleBtn" type="button" class="secondary-action-btn text-xs py-1.5 px-3">
+              📂 .srt / .vtt ရွေးရန်
+            </button>
+            <span id="subtitleStatusText" class="text-xs truncate max-w-[140px]" style="color: var(--text-muted);">မရှိပါ (Optional)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 02: MYANMAR TITLE & SUMMARY SETTINGS INNER PANEL -->
+      <div class="inner-panel mt-5">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="step-pill">02</span>
+          <h2 class="text-lg font-bold" style="color: var(--text-main);">မြန်မာခေါင်းစဉ် နှင့် ဇာတ်လမ်းအကျဉ်း ပုံစံ</h2>
+        </div>
+
+        <!-- NEW: Title Style Selector (Multi-select Toggle Chips) -->
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-xs font-bold uppercase tracking-wider" style="color: var(--text-accent);">
+            🏷️ မြန်မာခေါင်းစဉ် ပေးမည့်ပုံစံ (Title Styles)
+          </label>
+          <span class="text-[11px]" style="color: var(--text-muted);">နှစ်သက်ရာ ရွေးထားနိုင်သည်</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
+          <button type="button" class="title-style-chip active" data-tstyle="viral">
+            <span>🔥 ပရိသတ်ဆွဲဆောင်မှုအားကောင်းသော Recap ခေါင်းစဉ်</span>
+            <span class="check-indicator text-xs">✓</span>
+          </button>
+          <button type="button" class="title-style-chip active" data-tstyle="cinematic">
+            <span>🎬 ရုပ်ရှင်ဆန်သော ခေါင်းစဉ်အတို</span>
+            <span class="check-indicator text-xs">✓</span>
+          </button>
+          <button type="button" class="title-style-chip active" data-tstyle="suspense">
+            <span>😱 စိတ်လှုပ်ရှားဖွယ် / လျှို့ဝှက်ဆန်းကြယ်</span>
+            <span class="check-indicator text-xs">✓</span>
+          </button>
+          <button type="button" class="title-style-chip active" data-tstyle="emotional">
+            <span>💖 ခံစားချက်အသားပေး (Drama)</span>
+            <span class="check-indicator text-xs">✓</span>
+          </button>
+        </div>
+
+        <!-- Summary Style Mode (2x2 Grid) -->
+        <label class="block text-xs font-bold uppercase tracking-wider mb-2" style="color: var(--text-muted);">
+          📖 ဇာတ်လမ်းအကျဉ်း ပုံစံ (Summary Mode)
+        </label>
+        <div class="grid grid-cols-2 gap-2.5 mb-4">
+          <button type="button" class="option-btn active" data-mode="recap">
+            <span class="opt-title">🎬 Movie Recap</span>
+            <span class="opt-desc">ဆွဲဆောင်မှုရှိသော စကားပြောဟန်</span>
+          </button>
+          <button type="button" class="option-btn" data-mode="synopsis">
+            <span class="opt-title">📝 ဇာတ်လမ်းအကျဉ်း</span>
+            <span class="opt-desc">အစ-အလယ်-အဆုံး အကျဉ်းချုပ်</span>
+          </button>
+          <button type="button" class="option-btn" data-mode="timestamps">
+            <span class="opt-title">⏱️ အပိုင်းလိုက် အကျဉ်းချုပ်</span>
+            <span class="opt-desc">အချိန်နှင့်တကွ အကျဉ်းချုပ်</span>
+          </button>
+          <button type="button" class="option-btn" data-mode="dubbing">
+            <span class="opt-title">🎙️ Dubbing Script</span>
+            <span class="opt-desc">Voiceover အသံသွင်း Script</span>
+          </button>
+        </div>
+
+        <!-- Summary Length Chips -->
+        <label class="block text-xs font-bold mb-2" style="color: var(--text-main);">
+          စာသား အရှည်ပမာဏ
+        </label>
+        <div class="flex gap-2 mb-4">
+          <button type="button" class="preset-chip length-chip" data-length="short">အတို (Short)</button>
+          <button type="button" class="preset-chip length-chip active" data-length="medium">အလယ်အလတ်</button>
+          <button type="button" class="preset-chip length-chip" data-length="detailed">အရှည် အသေးစိတ်</button>
+        </div>
+
+        <!-- Scene Frame Sampling Count Chips -->
+        <label class="block text-xs font-bold mb-2" style="color: var(--text-main);">
+          ဇာတ်ကားတစ်ခုလုံးမှ စစ်ဆေးမည့် ဇာတ်ဝင်ခန်း အရေအတွက်
+        </label>
+        <div class="flex gap-2 mb-2.5">
+          <button type="button" class="preset-chip frames-chip" data-frames="12">12 frames - အမြန်</button>
+          <button type="button" class="preset-chip frames-chip active" data-frames="20">20 frames - ပုံမှန်</button>
+          <button type="button" class="preset-chip frames-chip" data-frames="30">30 frames - အသေးစိတ်</button>
+        </div>
+        <p class="text-xs leading-relaxed mb-4" style="color: var(--text-muted);">
+          ဇာတ်ကားအစမှ အဆုံးထိ အချိုးကျ ဇာတ်ဝင်ခန်းပုံများကို Browser ထဲတွင် ဆွဲထုတ်ပြီး AI ဖြင့် မြန်မာခေါင်းစဉ်နှင့် ဇာတ်လမ်းအကျဉ်းကို ရေးသားပေးပါမည်။
+        </p>
+
+        <!-- GitHub Pages External API Key Box (Collapsible) -->
+        <div class="mb-4">
+          <button id="toggleApiKeyBoxBtn" type="button" class="w-full py-2 px-3 rounded-xl border text-xs font-medium flex items-center justify-between" style="border-color: var(--border-color); background-color: var(--bg-input); color: var(--text-muted);">
+            <span id="apiKeyStatusIndicator">🔑 GitHub Pages တွင် သုံးရန် Gemini API Key (Optional)</span>
+            <span>⚙️</span>
+          </button>
+          <div id="apiKeyCollapsible" class="mt-2 p-3 rounded-xl border hidden" style="border-color: var(--border-color); background-color: var(--bg-input);">
+            <p class="text-xs leading-relaxed mb-2" style="color: var(--text-muted);">
+              GitHub Pages ပေါ်တင်သုံးသည့်အခါ <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="underline font-semibold" style="color: var(--text-accent);">Google AI Studio</a> မှ အခမဲ့ရယူနိုင်သော Gemini API Key ကို ထည့်သွင်းထားနိုင်ပါသည် (Browser ထဲတွင်သာ သိမ်းဆည်းထားပါမည်)။
+            </p>
+            <div class="flex gap-2">
+              <input type="password" id="userApiKeyInput" placeholder="AIzaSy..." class="flex-1 px-3 py-2 rounded-lg border text-xs outline-none" style="background-color: var(--bg-panel); border-color: var(--border-color); color: var(--text-main);" />
+              <button id="saveApiKeyBtn" type="button" class="px-3 py-2 rounded-lg text-xs font-bold" style="background-color: var(--btn-primary-bg); color: var(--btn-primary-text);">
+                သိမ်းမည်
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary Plan Banner -->
+        <div class="summary-banner mb-4">
+          <div>
+            <div class="text-sm font-bold mb-0.5" style="color: var(--text-main);">စစ်ဆေးမည့် အစီအစဉ်</div>
+            <div id="planDurationLabel" class="text-xs" style="color: var(--text-muted);">ကြာချိန် 00:00:00 · Movie Recap</div>
+          </div>
+          <div id="planFramesBadge" class="text-sm font-bold text-right" style="color: var(--text-accent);">
+            20 frames
+          </div>
+        </div>
+
+        <!-- Two Action Buttons: Full Title + Summary AND Quick Titles Only -->
+        <div class="flex flex-col gap-2.5">
+          <button type="button" id="generateSummaryBtn" class="primary-action-btn" disabled>
+            <span id="generateSpinner" class="spinner-ring hidden"></span>
+            <span id="generateBtnText">✨ မြန်မာခေါင်းစဉ် + ဇာတ်လမ်းအကျဉ်း ထုတ်မည်</span>
+          </button>
+
+          <button type="button" id="generateTitlesOnlyBtn" class="secondary-action-btn w-full py-3.5 text-sm" disabled>
+            <span id="titlesOnlySpinner" class="spinner-ring hidden"></span>
+            <span id="titlesOnlyBtnText">🏷️ မြန်မာခေါင်းစဉ်များသာ သီးသန့်အမြန်ထုတ်မည်</span>
+          </button>
+
+          <button type="button" id="cancelProcessBtn" class="secondary-action-btn w-full hidden">
+            <span>ⓧ Cancel (ရပ်တန့်မည်)</span>
+          </button>
+        </div>
+
+        <!-- Real-Time Progress Bar & Status -->
+        <div id="progressWrap" class="mt-4 hidden">
+          <div class="flex items-center justify-between text-xs font-bold mb-2" style="color: var(--text-main);">
+            <span id="progressPhaseLabel">ဇာတ်ဝင်ခန်းများ ဖမ်းယူနေပါသည်...</span>
+            <span id="progressPercentLabel">0%</span>
+          </div>
+          <div class="w-full h-2 rounded-full overflow-hidden mb-2.5" style="background-color: var(--progress-track);">
+            <div id="progressBarFill" class="h-full rounded-full transition-all duration-200" style="width: 0%; background-color: var(--progress-fill);"></div>
+          </div>
+          <p id="progressDetailText" class="text-xs leading-relaxed" style="color: var(--text-muted);">
+            ဗီဒီယိုဖိုင်ကြီးကို Server သို့ တင်ရန်မလိုဘဲ Browser ထဲတွင် အဓိက ဇာတ်ဝင်ခန်းများကို ထုတ်ယူနေပါသည်။
+          </p>
+        </div>
+
+        <!-- Live Extracted Keyframe Filmstrip -->
+        <div id="filmstripSection" class="mt-4 hidden">
+          <div class="flex items-center justify-between text-xs font-semibold mb-2" style="color: var(--text-muted);">
+            <span>🎞️ ဖမ်းယူထားသော ဇာတ်ဝင်ခန်းများ (နှိပ်၍ ကြည့်နိုင်သည်)</span>
+            <span id="capturedCountLabel">0 / 20</span>
+          </div>
+          <div id="filmstripContainer" class="filmstrip-scroll"></div>
+        </div>
+
+        <!-- Privacy Shield Note -->
+        <div class="flex items-start gap-2.5 mt-4 pt-2">
+          <span class="text-sm">🛡️</span>
+          <p class="text-xs leading-relaxed" style="color: var(--text-muted);">
+            ဗီဒီယိုဖိုင်အကြီးကြီးကို Server သို့ Upload မတင်ပါ။ ဇာတ်ဝင်ခန်းပုံရိပ်များကိုသာ Browser မှ ထုတ်ယူ၍ AI ဖြင့် မြန်မာခေါင်းစဉ်နှင့် ဇာတ်လမ်းအကျဉ်း ရေးသားပေးခြင်း ဖြစ်ပါသည်။
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- STEP 03-A: NEW DEDICATED MYANMAR TITLES CARD -->
+    <div id="titlesOutputCard" class="surface-card hidden">
+      <div class="flex items-start justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2.5">
+          <span class="step-pill">03</span>
+          <div>
+            <div class="text-xs font-semibold tracking-widest uppercase" style="color: var(--text-accent);">MYANMAR MOVIE TITLES</div>
+            <h2 class="text-lg sm:text-xl font-bold" style="color: var(--text-main);">🏷️ ရွေးချယ်စရာ မြန်မာဇာတ်ကားခေါင်းစဉ်များ</h2>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-xs leading-relaxed mb-3.5" style="color: var(--text-muted);">
+        နှစ်သက်ရာ မြန်မာခေါင်းစဉ်ကို တစ်ချက်နှိပ်၍ Copy ကူးနိုင်သလို <strong>"⭐ ဒီခေါင်းစဉ်သုံးမည်"</strong> ကို နှိပ်၍ အောက်ပါ ဇာတ်လမ်းအကျဉ်း၏ အဓိကခေါင်းစဉ်အဖြစ် သတ်မှတ်နိုင်ပါသည်။
+      </p>
+
+      <!-- Status Toast for Titles Card -->
+      <div id="titlesToast" class="mb-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold hidden" style="background-color: var(--bg-summary); color: var(--text-accent); border: 1px solid var(--border-active);"></div>
+
+      <!-- Generated Burmese Titles List -->
+      <div id="titlesListContainer" class="flex flex-col gap-3"></div>
+
+      <!-- Regenerate More Titles Button -->
+      <button id="regenerateTitlesBtn" type="button" class="secondary-action-btn w-full mt-4 text-xs py-3">
+        🔄 ခေါင်းစဉ်အသစ်များ ထပ်ထုတ်မည် (Regenerate More Titles)
+      </button>
+    </div>
+
+    <!-- STEP 03-B: STORY SUMMARY CARD -->
+    <div id="outputCard" class="surface-card hidden">
+      <div class="flex items-start justify-between gap-2 mb-4">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <span class="step-pill">📖</span>
+            <div>
+              <div class="text-xs font-semibold tracking-widest uppercase" style="color: var(--text-accent);">STORY SUMMARY</div>
+              <h2 class="text-lg sm:text-xl font-bold" style="color: var(--text-main);">မြန်မာ ဇာတ်လမ်းအကျဉ်းချုပ်</h2>
+            </div>
+          </div>
+        </div>
+        <button id="toggleEditModeBtn" type="button" class="secondary-action-btn text-xs py-2 px-3">
+          ✏️ ပြင်ဆင်ရန်
+        </button>
+      </div>
+
+      <!-- Selected Active Burmese Title Banner -->
+      <div id="activeHeadlineBanner" class="mb-3.5 p-3.5 rounded-2xl border" style="background-color: var(--bg-summary); border-color: var(--border-active);">
+        <div class="text-[11px] font-bold uppercase tracking-wider mb-1" style="color: var(--text-accent);">
+          ⭐ ရွေးချယ်ထားသော မြန်မာဇာတ်ကားခေါင်းစဉ်
+        </div>
+        <div id="activeBurmeseTitleText" class="text-base sm:text-lg font-bold leading-snug" style="color: var(--text-main);">
+          —
+        </div>
+      </div>
+
+      <!-- Status Toast for Copy / Save -->
+      <div id="statusToast" class="mb-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold hidden" style="background-color: var(--bg-summary); color: var(--text-accent); border: 1px solid var(--border-active);"></div>
+
+      <!-- Formatted Reader View -->
+      <div id="summaryFormattedView" class="summary-reader"></div>
+
+      <!-- Editable Textarea View (Hidden unless toggled) -->
+      <div id="summaryEditWrapper" class="hidden">
+        <div class="dark-input-box">
+          <textarea id="summaryTextarea" rows="14" class="w-full text-sm leading-relaxed"></textarea>
+        </div>
+      </div>
+
+      <!-- Action Buttons Row -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-4">
+        <button id="copySummaryBtn" type="button" class="primary-action-btn text-sm py-3.5">
+          📋 ခေါင်းစဉ် + ဇာတ်လမ်းအကျဉ်း Copy ကူးမည်
+        </button>
+        <button id="downloadTxtBtn" type="button" class="secondary-action-btn text-sm py-3.5">
+          💾 .txt ဖိုင်အဖြစ် ဒေါင်းလုဒ်ဆွဲမည်
+        </button>
+      </div>
+
+      <button id="regenerateBtn" type="button" class="secondary-action-btn w-full mt-2.5 text-xs py-3">
+        🔄 ခေါင်းစဉ် + ဇာတ်လမ်းအကျဉ်း အသစ်ပြန်ထုတ်မည်
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Offscreen Video & Canvas for Fast Frame Extraction -->
+  <video id="offscreenVideo" muted playsinline preload="auto" class="hidden"></video>
+  <canvas id="captureCanvas" class="hidden"></canvas>
+
+  <script>
+    /********************************************************************
+     * STATE & CONFIGURATION
+     ********************************************************************/
+    const apiKey = ""; // Canvas runtime automatically injects key when empty string
+    const STORAGE_KEY_API = "ai_movie_summarizer_gemini_key";
+
+    let selectedVideoFile = null;
+    let videoObjectUrl = null;
+    let videoDuration = 0;
+
+    let parsedSubtitleText = "";
+    let selectedTitleStyles = new Set(["viral", "cinematic", "suspense", "emotional"]);
+    let summaryMode = "recap";       // 'recap' | 'synopsis' | 'timestamps' | 'dubbing'
+    let summaryLength = "medium";    // 'short' | 'medium' | 'detailed'
+    let sampleFrameCount = 20;       // 12 | 20 | 30
+
+    let extractedFrames = [];        // Array of { timeSec, timestampStr, base64Data, dataUrl }
+    let generatedTitlesList = [];    // Array of { styleBadge, title, subtitleNote }
+    let selectedHeadlineTitle = "";  // Currently chosen Burmese movie title
+    let currentSummaryRawText = "";
+    let isProcessing = false;
+    let cancelRequested = false;
+    let isEditMode = false;
+
+    /********************************************************************
+     * DOM REFERENCES
+     ********************************************************************/
+    const bodyEl = document.body;
+    const metaThemeColor = document.getElementById("metaThemeColor");
+    const themeBtn = document.getElementById("themeBtn");
+    const loadDemoMovieBtn = document.getElementById("loadDemoMovieBtn");
+    const topApiKeyBtn = document.getElementById("topApiKeyBtn");
+    const downloadHtmlBtn = document.getElementById("downloadHtmlBtn");
+
+    const uploadDropzone = document.getElementById("uploadDropzone");
+    const videoFileInput = document.getElementById("videoFileInput");
+    const selectedFileName = document.getElementById("selectedFileName");
+    const selectedFileSubtext = document.getElementById("selectedFileSubtext");
+
+    const originalPreviewWrapper = document.getElementById("originalPreviewWrapper");
+    const originalVideoPlayer = document.getElementById("originalVideoPlayer");
+    const originalMetaText = document.getElementById("originalMetaText");
+
+    const subtitleFileInput = document.getElementById("subtitleFileInput");
+    const pickSubtitleBtn = document.getElementById("pickSubtitleBtn");
+    const subtitleStatusText = document.getElementById("subtitleStatusText");
+    const movieExtraNotes = document.getElementById("movieExtraNotes");
+
+    const toggleApiKeyBoxBtn = document.getElementById("toggleApiKeyBoxBtn");
+    const apiKeyCollapsible = document.getElementById("apiKeyCollapsible");
+    const userApiKeyInput = document.getElementById("userApiKeyInput");
+    const saveApiKeyBtn = document.getElementById("saveApiKeyBtn");
+    const apiKeyStatusIndicator = document.getElementById("apiKeyStatusIndicator");
+
+    const planDurationLabel = document.getElementById("planDurationLabel");
+    const planFramesBadge = document.getElementById("planFramesBadge");
+
+    const generateSummaryBtn = document.getElementById("generateSummaryBtn");
+    const generateSpinner = document.getElementById("generateSpinner");
+    const generateBtnText = document.getElementById("generateBtnText");
+
+    const generateTitlesOnlyBtn = document.getElementById("generateTitlesOnlyBtn");
+    const titlesOnlySpinner = document.getElementById("titlesOnlySpinner");
+    const titlesOnlyBtnText = document.getElementById("titlesOnlyBtnText");
+
+    const cancelProcessBtn = document.getElementById("cancelProcessBtn");
+
+    const progressWrap = document.getElementById("progressWrap");
+    const progressPhaseLabel = document.getElementById("progressPhaseLabel");
+    const progressPercentLabel = document.getElementById("progressPercentLabel");
+    const progressBarFill = document.getElementById("progressBarFill");
+    const progressDetailText = document.getElementById("progressDetailText");
+
+    const filmstripSection = document.getElementById("filmstripSection");
+    const filmstripContainer = document.getElementById("filmstripContainer");
+    const capturedCountLabel = document.getElementById("capturedCountLabel");
+
+    const titlesOutputCard = document.getElementById("titlesOutputCard");
+    const titlesToast = document.getElementById("titlesToast");
+    const titlesListContainer = document.getElementById("titlesListContainer");
+    const regenerateTitlesBtn = document.getElementById("regenerateTitlesBtn");
+
+    const outputCard = document.getElementById("outputCard");
+    const activeBurmeseTitleText = document.getElementById("activeBurmeseTitleText");
+    const toggleEditModeBtn = document.getElementById("toggleEditModeBtn");
+    const statusToast = document.getElementById("statusToast");
+    const summaryFormattedView = document.getElementById("summaryFormattedView");
+    const summaryEditWrapper = document.getElementById("summaryEditWrapper");
+    const summaryTextarea = document.getElementById("summaryTextarea");
+    const copySummaryBtn = document.getElementById("copySummaryBtn");
+    const downloadTxtBtn = document.getElementById("downloadTxtBtn");
+    const regenerateBtn = document.getElementById("regenerateBtn");
+
+    const offscreenVideo = document.getElementById("offscreenVideo");
+    const captureCanvas = document.getElementById("captureCanvas");
+
+    /********************************************************************
+     * INITIALIZATION & HELPERS
+     ********************************************************************/
+    function initApp() {
+      const savedKey = localStorage.getItem(STORAGE_KEY_API) || "";
+      if (savedKey) {
+        userApiKeyInput.value = savedKey;
+        apiKeyStatusIndicator.textContent = "🔑 Gemini API Key သိမ်းဆည်းထားပြီး (GitHub Pages Ready)";
+      }
+      updatePlanBanner();
+      updateActionButtonsState();
+    }
+
+    function updateActionButtonsState() {
+      if (isProcessing) {
+        generateSummaryBtn.disabled = true;
+        generateTitlesOnlyBtn.disabled = true;
+        return;
+      }
+      const hasVideo = Boolean(selectedVideoFile);
+      const hasHint = Boolean(movieExtraNotes.value.trim()) || Boolean(parsedSubtitleText);
+
+      // Primary full summary button works with video (or even hint if user wants)
+      generateSummaryBtn.disabled = !(hasVideo || hasHint);
+      // Secondary quick title maker button works if either video OR title hint is entered
+      generateTitlesOnlyBtn.disabled = !(hasVideo || hasHint);
+    }
+
+    movieExtraNotes.addEventListener("input", () => {
+      updateActionButtonsState();
+    });
+
+    function formatHMS(seconds) {
+      const safe = Math.max(0, Math.floor(Number(seconds) || 0));
+      const h = Math.floor(safe / 3600);
+      const m = Math.floor((safe % 3600) / 60);
+      const s = safe % 60;
+      return [h, m, s].map(v => String(v).padStart(2, "0")).join(":");
+    }
+
+    function formatFileSize(bytes) {
+      const mb = bytes / (1024 * 1024);
+      if (mb >= 1024) {
+        return `${(mb / 1024).toFixed(2)} GB`;
+      }
+      return `${Math.max(0.1, mb).toFixed(1)} MB`;
+    }
+
+    function showToast(message, targetEl = statusToast) {
+      targetEl.textContent = message;
+      targetEl.classList.remove("hidden");
+      setTimeout(() => {
+        targetEl.classList.add("hidden");
+      }, 3200);
+    }
+
+    function copyTextToClipboard(text, onSuccessMsg, toastTarget = statusToast) {
+      const tempArea = document.createElement("textarea");
+      tempArea.value = text;
+      tempArea.style.position = "fixed";
+      tempArea.style.left = "-9999px";
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      try {
+        document.execCommand("copy");
+        showToast(onSuccessMsg, toastTarget);
+      } catch (err) {
+        showToast("Copy ကူးရာတွင် အခက်အခဲရှိနေပါသည်။", toastTarget);
+      }
+      tempArea.remove();
+    }
+
+    /********************************************************************
+     * THEME & SELF-HTML DOWNLOAD FOR GITHUB PAGES
+     ********************************************************************/
+    themeBtn.addEventListener("click", () => {
+      const isLight = bodyEl.classList.toggle("light-theme");
+      metaThemeColor.setAttribute("content", isLight ? "#efe6e4" : "#0d1b13");
+    });
+
+    downloadHtmlBtn.addEventListener("click", () => {
+      const fullHtml = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+      const blob = new Blob([fullHtml], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "index.html";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+    });
+
+    /********************************************************************
+     * COLLAPSIBLE PANELS & API KEY STORAGE
+     ********************************************************************/
+    toggleApiKeyBoxBtn.addEventListener("click", () => {
+      apiKeyCollapsible.classList.toggle("hidden");
+    });
+
+    topApiKeyBtn.addEventListener("click", () => {
+      apiKeyCollapsible.classList.remove("hidden");
+      apiKeyCollapsible.scrollIntoView({ behavior: "smooth", block: "center" });
+      userApiKeyInput.focus();
+    });
+
+    saveApiKeyBtn.addEventListener("click", () => {
+      const val = userApiKeyInput.value.trim();
+      if (val) {
+        localStorage.setItem(STORAGE_KEY_API, val);
+        apiKeyStatusIndicator.textContent = "🔑 Gemini API Key သိမ်းဆည်းထားပြီး ✓";
+      } else {
+        localStorage.removeItem(STORAGE_KEY_API);
+        apiKeyStatusIndicator.textContent = "🔑 GitHub Pages တွင် သုံးရန် Gemini API Key (Optional)";
+      }
+      apiKeyCollapsible.classList.add("hidden");
+    });
+
+    /********************************************************************
+     * SUBTITLE (.SRT / .VTT) FILE PARSER
+     ********************************************************************/
+    pickSubtitleBtn.addEventListener("click", () => subtitleFileInput.click());
+
+    subtitleFileInput.addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const rawText = await file.text();
+        const lines = rawText.split(/\r?\n/);
+        const cleaned = [];
+        for (let line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || /^\d+$/.test(trimmed) || trimmed === "WEBVTT") continue;
+          cleaned.push(trimmed);
+        }
+        const joined = cleaned.join(" ");
+        parsedSubtitleText = joined.length > 18000
+          ? joined.slice(0, 6000) + "\n...[Middle Subtitles]...\n" +
+            joined.slice(Math.floor(joined.length / 2) - 3000, Math.floor(joined.length / 2) + 3000) +
+            "\n...[Ending Subtitles]...\n" + joined.slice(-6000)
+          : joined;
+        subtitleStatusText.textContent = `✓ ${file.name}`;
+        subtitleStatusText.style.color = "var(--text-accent)";
+        updateActionButtonsState();
+      } catch (err) {
+        subtitleStatusText.textContent = "ဖိုင်ဖတ်ရာတွင် အမှားရှိပါသည်";
+      }
+    });
+
+    /********************************************************************
+     * VIDEO UPLOAD & DEMO MOVIE GENERATOR
+     ********************************************************************/
+    uploadDropzone.addEventListener("click", () => {
+      if (!isProcessing) videoFileInput.click();
+    });
+
+    uploadDropzone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      if (!isProcessing) uploadDropzone.classList.add("dragover");
+    });
+
+    uploadDropzone.addEventListener("dragleave", () => {
+      uploadDropzone.classList.remove("dragover");
+    });
+
+    uploadDropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      uploadDropzone.classList.remove("dragover");
+      if (isProcessing) return;
+      if (e.dataTransfer.files?.length) {
+        loadVideoFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    videoFileInput.addEventListener("change", (e) => {
+      if (e.target.files?.length) {
+        loadVideoFile(e.target.files[0]);
+      }
+    });
+
+    function loadVideoFile(file) {
+      if (!file) return;
+      selectedVideoFile = file;
+      extractedFrames = [];
+      filmstripSection.classList.add("hidden");
+      filmstripContainer.innerHTML = "";
+
+      if (videoObjectUrl) {
+        URL.revokeObjectURL(videoObjectUrl);
+      }
+      videoObjectUrl = URL.createObjectURL(file);
+
+      selectedFileName.textContent = file.name;
+      selectedFileSubtext.textContent = "Video အသစ်ပြောင်းရန် နှိပ်ပါ";
+
+      originalVideoPlayer.src = videoObjectUrl;
+      offscreenVideo.src = videoObjectUrl;
+      originalPreviewWrapper.classList.remove("hidden");
+
+      originalVideoPlayer.onloadedmetadata = () => {
+        videoDuration = Number.isFinite(originalVideoPlayer.duration) && originalVideoPlayer.duration > 0
+          ? originalVideoPlayer.duration
+          : 120;
+        originalMetaText.textContent = `${formatHMS(videoDuration)} · ${formatFileSize(file.size)}`;
+        updateActionButtonsState();
+        updatePlanBanner();
+      };
+      updateActionButtonsState();
+    }
+
+    loadDemoMovieBtn.addEventListener("click", async () => {
+      if (isProcessing) return;
+      loadDemoMovieBtn.textContent = "⏳ ပြင်ဆင်နေသည်...";
+      try {
+        const demoFile = await buildFourActDemoMovie();
+        movieExtraNotes.value = "The Hidden Jade Map (လျှို့ဝှက်ကျောက်စိမ်းမြေပုံနှင့် တောနက်ထဲက စွန့်စားခန်း - မောင်ဇော် နှင့် မေသက်)";
+        loadVideoFile(demoFile);
+      } finally {
+        loadDemoMovieBtn.textContent = "🎬 Demo ဇာတ်ကား";
+      }
+    });
+
+    async function buildFourActDemoMovie() {
+      const canvas = document.createElement("canvas");
+      canvas.width = 512;
+      canvas.height = 288;
+      const ctx = canvas.getContext("2d");
+
+      const acts = [
+        { bg: "#102820", title: "ACT 1: Mysterious Map Found", sub: "Old library discovery by Zaw & May", color: "#78a98a" },
+        { bg: "#1d293b", title: "ACT 2: Journey into the Jungle", sub: "Crossing the ancient bridge in heavy rain", color: "#60a5fa" },
+        { bg: "#3b1d26", title: "ACT 3: Rivals & Underground Temple", sub: "Solving the stone puzzle before the collapse", color: "#f87171" },
+        { bg: "#1f3528", title: "ACT 4: Escape & New Beginning", sub: "Returning home with the ancient relic", color: "#fbbf24" }
+      ];
+
+      if (typeof canvas.captureStream === "function" && typeof MediaRecorder !== "undefined") {
+        const stream = canvas.captureStream(12);
+        const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp8")
+          ? "video/webm;codecs=vp8"
+          : "video/mp4";
+        const recorder = new MediaRecorder(stream, { mimeType: mime });
+        const chunks = [];
+        recorder.ondataavailable = e => { if (e.data?.size > 0) chunks.push(e.data); };
+        recorder.start();
+
+        for (let i = 0; i < acts.length; i++) {
+          const act = acts[i];
+          for (let f = 0; f < 5; f++) {
+            ctx.fillStyle = act.bg;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = act.color;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(18, 18, canvas.width - 36, canvas.height - 36);
+
+            ctx.fillStyle = act.color;
+            ctx.font = "bold 22px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(act.title, canvas.width / 2, 118);
+
+            ctx.fillStyle = "#eef5f0";
+            ctx.font = "16px sans-serif";
+            ctx.fillText(act.sub, canvas.width / 2, 158);
+
+            ctx.fillStyle = "#93ab9c";
+            ctx.font = "13px monospace";
+            ctx.fillText(`Scene ${i + 1}.${f + 1} · Mystery Adventure Movie`, canvas.width / 2, 208);
+
+            await new Promise(r => setTimeout(r, 90));
+          }
+        }
+
+        recorder.stop();
+        await new Promise(r => { recorder.onstop = r; });
+        const blob = new Blob(chunks, { type: mime });
+        return new File([blob], "Mystery_Jade_Map_Adventure.webm", { type: mime });
+      }
+
+      return new File([new Uint8Array(1024 * 256)], "Mystery_Jade_Map_Adventure.mp4", { type: "video/mp4" });
+    }
+
+    /********************************************************************
+     * STEP 02: TITLE STYLE, SUMMARY MODE, LENGTH & FRAME COUNT CONTROLS
+     ********************************************************************/
+    document.querySelectorAll(".title-style-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const styleKey = chip.dataset.tstyle;
+        if (selectedTitleStyles.has(styleKey)) {
+          if (selectedTitleStyles.size > 1) {
+            selectedTitleStyles.delete(styleKey);
+            chip.classList.remove("active");
+            chip.querySelector(".check-indicator").textContent = "+";
+          }
+        } else {
+          selectedTitleStyles.add(styleKey);
+          chip.classList.add("active");
+          chip.querySelector(".check-indicator").textContent = "✓";
+        }
+      });
+    });
+
+    const modeNamesMap = {
+      recap: "Movie Recap",
+      synopsis: "ဇာတ်လမ်းအကျဉ်း",
+      timestamps: "အပိုင်းလိုက် အကျဉ်းချုပ်",
+      dubbing: "Dubbing Script"
+    };
+
+    document.querySelectorAll(".option-btn[data-mode]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".option-btn[data-mode]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        summaryMode = btn.dataset.mode;
+        updatePlanBanner();
+      });
+    });
+
+    document.querySelectorAll(".length-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll(".length-chip").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+        summaryLength = chip.dataset.length;
+      });
+    });
+
+    document.querySelectorAll(".frames-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll(".frames-chip").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+        sampleFrameCount = parseInt(chip.dataset.frames, 10) || 20;
+        updatePlanBanner();
+      });
+    });
+
+    function updatePlanBanner() {
+      const modeTitle = modeNamesMap[summaryMode] || "Movie Recap";
+      planDurationLabel.textContent = `ကြာချိန် ${formatHMS(videoDuration)} · ${modeTitle}`;
+      planFramesBadge.textContent = `${sampleFrameCount} frames`;
+    }
+
+    /********************************************************************
+     * PHASE 1: SMART CLIENT-SIDE KEYFRAME EXTRACTOR
+     ********************************************************************/
+    async function extractMovieKeyframes(totalFramesToSample) {
+      extractedFrames = [];
+      filmstripSection.classList.remove("hidden");
+      filmstripContainer.innerHTML = "";
+      capturedCountLabel.textContent = `0 / ${totalFramesToSample}`;
+
+      const duration = Math.max(1, videoDuration || 60);
+      const startOffset = duration * 0.02;
+      const usableSpan = duration * 0.95;
+
+      const targetWidth = 480;
+      const rawW = offscreenVideo.videoWidth || 640;
+      const rawH = offscreenVideo.videoHeight || 360;
+      const targetHeight = Math.max(180, Math.round((rawH / rawW) * targetWidth));
+
+      captureCanvas.width = targetWidth;
+      captureCanvas.height = targetHeight;
+      const ctx = captureCanvas.getContext("2d");
+
+      for (let i = 0; i < totalFramesToSample; i++) {
+        if (cancelRequested) throw new Error("CANCELLED");
+
+        const ratio = totalFramesToSample === 1 ? 0.5 : i / (totalFramesToSample - 1);
+        const seekTime = Math.min(duration - 0.1, Math.max(0, startOffset + ratio * usableSpan));
+        const timestampStr = formatHMS(seekTime);
+
+        const pct = Math.round(((i + 1) / totalFramesToSample) * 48);
+        progressPhaseLabel.textContent = `ဇာတ်ဝင်ခန်း (${i + 1}/${totalFramesToSample}) ဖမ်းယူနေသည် · ${timestampStr}`;
+        progressPercentLabel.textContent = `${pct}%`;
+        progressBarFill.style.width = `${pct}%`;
+
+        await seekVideoToTime(offscreenVideo, seekTime);
+
+        try {
+          ctx.drawImage(offscreenVideo, 0, 0, targetWidth, targetHeight);
+        } catch (drawErr) {
+          ctx.fillStyle = "#16261d";
+          ctx.fillRect(0, 0, targetWidth, targetHeight);
+        }
+
+        const dataUrl = captureCanvas.toDataURL("image/jpeg", 0.62);
+        const base64Data = dataUrl.split(",")[1];
+
+        const frameItem = {
+          index: i + 1,
+          timeSec: seekTime,
+          timestampStr,
+          base64Data,
+          dataUrl
+        };
+
+        extractedFrames.push(frameItem);
+        appendFrameThumbnail(frameItem);
+        capturedCountLabel.textContent = `${i + 1} / ${totalFramesToSample}`;
+      }
+
+      return extractedFrames;
+    }
+
+    function seekVideoToTime(videoEl, timeSeconds) {
+      return new Promise((resolve) => {
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          videoEl.removeEventListener("seeked", onSeeked);
+          videoEl.removeEventListener("error", onSeeked);
+          resolve();
+        };
+        const onSeeked = () => finish();
+        const timeoutId = setTimeout(finish, 1800);
+
+        videoEl.addEventListener("seeked", () => {
+          clearTimeout(timeoutId);
+          finish();
+        }, { once: true });
+
+        videoEl.addEventListener("error", () => {
+          clearTimeout(timeoutId);
+          finish();
+        }, { once: true });
+
+        try {
+          videoEl.currentTime = timeSeconds;
+        } catch (e) {
+          clearTimeout(timeoutId);
+          finish();
+        }
+      });
+    }
+
+    function appendFrameThumbnail(frameItem) {
+      const card = document.createElement("div");
+      card.className = "scene-thumb-card";
+      card.title = `${frameItem.timestampStr} သို့ ကျော်ကြည့်ရန် နှိပ်ပါ`;
+      card.innerHTML = `
+        <img src="${frameItem.dataUrl}" alt="Scene ${frameItem.index}" />
+        <div class="px-2 py-1 flex items-center justify-between text-[11px] font-semibold" style="color: var(--text-muted);">
+          <span>#${frameItem.index}</span>
+          <span style="color: var(--text-accent);">${frameItem.timestampStr}</span>
+        </div>
+      `;
+      card.addEventListener("click", () => {
+        originalVideoPlayer.currentTime = frameItem.timeSec;
+        originalVideoPlayer.play().catch(() => {});
+        originalVideoPlayer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+      filmstripContainer.appendChild(card);
+      filmstripContainer.scrollLeft = filmstripContainer.scrollWidth;
+    }
+
+    /********************************************************************
+     * PHASE 2: MULTIMODAL GEMINI API CALLS (STRUCTURED TITLES + SUMMARY)
+     ********************************************************************/
+    function getSelectedTitleStylesDescription() {
+      const descriptions = [];
+      if (selectedTitleStyles.has("viral")) {
+        descriptions.push("🔥 Viral Recap ခေါင်းစဉ် (YouTube/Facebook တွင် ပရိသတ်အကြည့်များသော ဆွဲဆောင်မှုအားကောင်းသည့် ခေါင်းစဉ်ရှည်၊ ဥပမာ - 'မိသားစုကို ကျေးဇူးဆပ်ဖို့ ရောက်လာတဲ့ လာဘ်နတ်မင်းလေး')");
+      }
+      if (selectedTitleStyles.has("cinematic")) {
+        descriptions.push("🎬 ရုပ်ရှင်ဆန်သော ခေါင်းစဉ်အတို (ကျစ်လျစ်ပြီး ရုပ်ရှင်ရုံတင်ကားဆန်သော မြန်မာခေါင်းစဉ်အတို)");
+      }
+      if (selectedTitleStyles.has("suspense")) {
+        descriptions.push("😱 စိတ်လှုပ်ရှားဖွယ် / လျှို့ဝှက်ဆန်းကြယ် Hook ခေါင်းစဉ် (ပရိသတ် သိချင်စိတ်ပြင်းပြသွားစေမည့် ခေါင်းစဉ်)");
+      }
+      if (selectedTitleStyles.has("emotional")) {
+        descriptions.push("💖 ခံစားချက်အသားပေး Drama ခေါင်းစဉ် (ရင်ထဲထိရှစေမည့် မြန်မာခေါင်းစဉ်)");
+      }
+      descriptions.push("⚡ မူရင်းအဓိပ္ပာယ်အတိုင်း ခေါင်းစဉ် (ဇာတ်ကား၏ အဓိကကျောရိုးနှင့် အနီးစပ်ဆုံး မြန်မာခေါင်းစဉ်)");
+      return descriptions.join("\n- ");
+    }
+
+    function buildFullTitlesAndSummaryPrompt(frames) {
+      const lengthInstructions = {
+        short: "အတိုချုပ် ပုံစံဖြင့် အဓိကအချက်များကိုသာ လိုရင်းတိုရှင်း (စာပိုဒ် ၃ ပိုဒ်ခန့်) ရေးသားပေးပါ။",
+        medium: "အလယ်အလတ် အရှည်ပမာဏဖြင့် အစ၊ အလယ်၊ အဆုံး ပြည့်စုံစွာ (စာပိုဒ် ၅ ပိုဒ်မှ ၇ ပိုဒ်ခန့်) ရေးသားပေးပါ။",
+        detailed: "အရှည် အသေးစိတ် ပုံစံဖြင့် ဇာတ်ကွက်တစ်ခုချင်းစီ၏ စိတ်လှုပ်ရှားဖွယ် အချိုးအကွေ့များကို ပြည့်စုံစွာ အသေးစိတ် ရေးသားပေးပါ။"
+      };
+
+      const modeInstructions = {
+        recap: `
+သဘာဝကျပြီး ပရိသတ်ဆွဲဆောင်မှုရှိသော မြန်မာ Movie Recap (ဇာတ်လမ်းပြော) စကားပြောဟန်ဖြင့် အောက်ပါခေါင်းစဉ်ငယ်များ ခွဲ၍ ရေးသားပေးပါ -
+### ၁။ ဇာတ်ကား အမျိုးအစား နှင့် အဓိက ဇာတ်ကောင်များ
+### ၂။ 🎬 Movie Recap (ဇာတ်လမ်းပြော အပြည့်အစုံ)
+- အဖွင့် (Hook): ပရိသတ် စိတ်ဝင်စားသွားစေမည့် အဖွင့်စကားဖြင့် စတင်ပါ။
+- ဇာတ်လမ်းအစ၊ ဇာတ်ရှိန်တက်ပုံ၊ အထွတ်အထိပ် (Climax) နှင့် ဇာတ်သိမ်းပိုင်းတို့ကို အချိတ်အဆက်မိမိ စီးဆင်းမှုရှိသော မြန်မာစကားပြောဟန်ဖြင့် ပြောပြပါ။
+### ၃။ ⏱️ အဓိက ဇာတ်ဝင်ခန်း အချိန်မှတ်တမ်းများ (Key Highlights)`,
+
+        synopsis: `
+ရှင်းလင်းတိကျသော မြန်မာဘာသာဖြင့် အောက်ပါအတိုင်း ဇာတ်လမ်းအကျဉ်းချုပ် ရေးသားပေးပါ -
+### ၁။ ဇာတ်ကား အမျိုးအစား နှင့် အဓိက ဇာတ်ကောင်များ
+### ၂။ 📝 ဇာတ်လမ်းအကျဉ်းချုပ် (အစ၊ အလယ်၊ အဆုံး)
+- **နိဒါန်း (ဇာတ်လမ်းအစ)**
+- **ဇာတ်ရှိန်တက်လာပုံ (အလယ်ပိုင်း ပဋိပက္ခ)**
+- **အထွတ်အထိပ် နှင့် ဇာတ်သိမ်းပိုင်း**
+### ၃။ 💡 ဇာတ်ကားမှ ပေးချင်သော အဓိက သင်ခန်းစာ / Message`,
+
+        timestamps: `
+အချိန်မှတ်တမ်း [HH:MM:SS] အလိုက် အပိုင်းလိုက် ဇာတ်လမ်းအကျဉ်းချုပ် ရေးသားပေးပါ -
+### ၁။ ဇာတ်ကား အနှစ်ချုပ် မိတ်ဆက်
+### ၂။ ⏱️ အချိန်အလိုက် ဇာတ်ဝင်ခန်း အကျဉ်းချုပ်များ
+- ဖမ်းယူထားသော ဇာတ်ဝင်ခန်းများ၏ အချိန် [HH:MM:SS] များကို အခြေခံ၍ အပိုင်းလိုက် ဖြစ်ပျက်ပုံများကို အစဉ်လိုက် ရှင်းပြပေးပါ။
+### ၃။ ဇာတ်သိမ်း သုံးသပ်ချက်`,
+
+        dubbing: `
+ဗီဒီယိုနောက်ခံ အသံသွင်းရန် (Voiceover Dubbing Script) ရေးသားပေးပါ -
+### ၁။ ဗီဒီယို အဖွင့် မိတ်ဆက် (Intro Hook)
+### ၂။ 🎙️ အချိန်အလိုက် အသံသွင်းရန် Script
+- အပိုဒ်တိုင်းတွင် အချိန်အပိုင်းအခြား [HH:MM:SS] ကို ဖော်ပြပြီး အသံသွင်းသူ တိုက်ရိုက်ဖတ်နိုင်မည့် သဘာဝကျသော မြန်မာစကားပြောဝါကျများဖြင့် ရေးသားပေးပါ။
+### ၃။ အဆုံးသတ် နှုတ်ဆက်စကား (Outro)`
+      };
+
+      const systemPrompt =
+        "သင်သည် ကျွမ်းကျင်သော မြန်မာရုပ်ရှင် ဇာတ်ကားခေါင်းစဉ်ပေး ပညာရှင် (Burmese Movie Title Creator) နှင့် ဇာတ်လမ်းအကျဉ်းချုပ် (Movie Recap Writer) ဖြစ်ပါသည်။ " +
+        "ပေးပို့လာသော ဇာတ်ဝင်ခန်း ပုံရိပ်များ၊ အချိန်မှတ်တမ်းများနှင့် အရိပ်အမြွက်များကို လေ့လာပြီး သဘာဝကျ၍ ဆွဲဆောင်မှုရှိသော မြန်မာယူနီကုဒ် (Burmese Unicode) ဖြင့်သာ JSON format အတိအကျ ထုတ်ပေးပါ။";
+
+      let userPrompt =
+        `ဗီဒီယိုဖိုင်အမည်: "${selectedVideoFile ? selectedVideoFile.name : "မူရင်းဇာတ်ကား"}"\n` +
+        `စုစုပေါင်း ကြာချိန်: ${formatHMS(videoDuration)}\n` +
+        `ရွေးချယ်ထားသော မြန်မာခေါင်းစဉ် ပုံစံများ (Title Styles):\n- ${getSelectedTitleStylesDescription()}\n\n` +
+        `ပထမဦးစွာ ဇာတ်ကားနှင့် အလိုက်ဖက်ဆုံး မြန်မာဇာတ်ကားခေါင်းစဉ် (၆) ခုကို ပုံစံမထပ်အောင် ဖန်တီးပေးပါ။\n` +
+        `ထို့နောက် ဇာတ်လမ်းအကျဉ်းချုပ်ကို (${lengthInstructions[summaryLength]}) အောက်ပါပုံစံအတိုင်း ရေးသားပေးပါ-\n` +
+        `${modeInstructions[summaryMode]}\n`;
+
+      if (movieExtraNotes.value.trim()) {
+        userPrompt += `\nမူရင်းဇာတ်ကားအမည် / အရိပ်အမြွက်: "${movieExtraNotes.value.trim()}"\n`;
+      }
+      if (parsedSubtitleText) {
+        userPrompt += `\nSubtitle စာတန်းထိုး ကောက်နုတ်ချက်:\n${parsedSubtitleText}\n`;
+      }
+      if (frames && frames.length > 0) {
+        userPrompt += `\nအောက်ပါတို့သည် ဇာတ်ကားအစမှ အဆုံးထိ ဖမ်းယူထားသော ဇာတ်ဝင်ခန်း (${frames.length}) ပုံ ဖြစ်ပါသည်-`;
+      }
+
+      return { systemPrompt, userPrompt };
+    }
+
+    function buildTitlesOnlyPrompt(frames) {
+      const systemPrompt =
+        "သင်သည် ပရိသတ် သိန်းချီကြည့်ရှုသော မြန်မာ Movie Recap Channel များနှင့် ရုပ်ရှင်ဘာသာပြန်များအတွက် အထူးဆွဲဆောင်မှုရှိသော မြန်မာဇာတ်ကားခေါင်းစဉ်များ (Burmese Movie Titles) ဖန်တီးပေးသည့် ပညာရှင် ဖြစ်ပါသည်။ " +
+        "သဘာဝကျပြီး စိတ်ဝင်စားဖွယ်ကောင်းသော မြန်မာယူနီကုဒ် (Burmese Unicode) ဖြင့်သာ JSON format ထုတ်ပေးပါ။";
+
+      let userPrompt =
+        `ဗီဒီယိုဖိုင်အမည်: "${selectedVideoFile ? selectedVideoFile.name : "Movie"}"\n` +
+        `မူရင်းဇာတ်ကားအမည် သို့မဟုတ် အရိပ်အမြွက်: "${movieExtraNotes.value.trim() || "ဗီဒီယိုဇာတ်ဝင်ခန်းများမှ အလိုအလျောက် ခန့်မှန်းပေးပါ"}"\n\n` +
+        `အောက်ပါ ခေါင်းစဉ်ပုံစံများ ပါဝင်အောင် စုစုပေါင်း မြန်မာဇာတ်ကားခေါင်းစဉ် (၆) ခု ဖန်တီးပေးပါ-\n- ${getSelectedTitleStylesDescription()}\n`;
+
+      if (parsedSubtitleText) {
+        userPrompt += `\nSubtitle စာတန်းထိုး ကောက်နုတ်ချက်:\n${parsedSubtitleText.slice(0, 5000)}\n`;
+      }
+      if (frames && frames.length > 0) {
+        userPrompt += `\nအောက်ပါ ဇာတ်ဝင်ခန်းပုံများကို ကြည့်၍ ဇာတ်လမ်းနှင့် အလိုက်ဖက်ဆုံး မြန်မာခေါင်းစဉ်များ ပေးပါ-`;
+      }
+
+      return { systemPrompt, userPrompt };
+    }
+
+    async function callGeminiStructured(systemPrompt, userPrompt, frames, includeFullSummary = true) {
+      const parts = [{ text: userPrompt }];
+      if (frames && frames.length > 0) {
+        for (const f of frames) {
+          parts.push({ text: `Scene #${f.index} [${f.timestampStr}]:` });
+          parts.push({
+            inlineData: {
+              mimeType: "image/jpeg",
+              data: f.base64Data
+            }
+          });
+        }
+      }
+
+      const propertiesSchema = {
+        titles: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              styleBadge: {
+                type: "STRING",
+                description: "e.g. 🔥 Viral Recap ခေါင်းစဉ်, 🎬 ရုပ်ရှင်ခေါင်းစဉ်အတို, 😱 စိတ်လှုပ်ရှားဖွယ် Hook, 💖 ခံစားချက်အသားပေး, ⚡ မူရင်းအဓိပ္ပာယ်အတိုင်း"
+              },
+              title: {
+                type: "STRING",
+                description: "Catchy, natural Burmese movie title in Myanmar Unicode"
+              },
+              subtitleNote: {
+                type: "STRING",
+                description: "Brief 1-line explanation in Burmese of why this title fits"
+              }
+            },
+            required: ["styleBadge", "title", "subtitleNote"]
+          }
+        }
+      };
+
+      const requiredFields = ["titles"];
+
+      if (includeFullSummary) {
+        propertiesSchema.summaryMarkdown = {
+          type: "STRING",
+          description: "Complete Burmese movie summary / recap formatted with ### headings"
+        };
+        requiredFields.push("summaryMarkdown");
+      }
+
+      const payload = {
+        contents: [{ role: "user", parts }],
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        },
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: propertiesSchema,
+            required: requiredFields
+          }
+        }
+      };
+
+      const savedUserKey = (localStorage.getItem(STORAGE_KEY_API) || "").trim();
+      const effectiveKey = savedUserKey || apiKey;
+      const modelsToTry = ["gemini-3-flash-preview", "gemini-2.5-flash"];
+      let lastError = null;
+
+      for (const modelName of modelsToTry) {
+        try {
+          const rawJsonText = await fetchGeminiWithBackoff(modelName, effectiveKey, payload);
+          if (rawJsonText) {
+            return JSON.parse(rawJsonText);
+          }
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      throw lastError || new Error("AI မှ မြန်မာခေါင်းစဉ်နှင့် ဇာတ်လမ်းအကျဉ်း ထုတ်ယူရာတွင် အခက်အခဲ ဖြစ်ပေါ်နေပါသည်။");
+    }
+
+    async function fetchGeminiWithBackoff(modelName, keyToUse, payload) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${keyToUse}`;
+      const delays = [1000, 2000, 4000];
+
+      for (let attempt = 0; attempt <= delays.length; attempt++) {
+        if (cancelRequested) throw new Error("CANCELLED");
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          const candidateText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (candidateText) return candidateText;
+          throw new Error("Empty AI response");
+        }
+
+        if ((response.status === 429 || response.status >= 500) && attempt < delays.length) {
+          await new Promise(r => setTimeout(r, delays[attempt]));
+          continue;
+        }
+
+        const errData = await response.json().catch(() => ({}));
+        const errMsg = errData?.error?.message || `HTTP ${response.status}`;
+        throw new Error(errMsg);
+      }
+    }
+
+    /********************************************************************
+     * MAIN WORKFLOWS:
+     * 1) FULL (MYANMAR TITLES + STORY SUMMARY)
+     * 2) QUICK TITLES ONLY (OR REGENERATE TITLES)
+     ********************************************************************/
+    cancelProcessBtn.addEventListener("click", () => {
+      cancelRequested = true;
+      progressPhaseLabel.textContent = "ရပ်တန့်နေပါသည်...";
+    });
+
+    generateSummaryBtn.addEventListener("click", () => startFullSummarizationAndTitles());
+    regenerateBtn.addEventListener("click", () => startFullSummarizationAndTitles());
+
+    generateTitlesOnlyBtn.addEventListener("click", () => startQuickTitlesOnly());
+    regenerateTitlesBtn.addEventListener("click", () => startQuickTitlesOnly());
+
+    async function startFullSummarizationAndTitles() {
+      if (isProcessing) return;
+      if (!selectedVideoFile && !movieExtraNotes.value.trim() && !parsedSubtitleText) return;
+
+      isProcessing = true;
+      cancelRequested = false;
+      updateActionButtonsState();
+
+      generateSpinner.classList.remove("hidden");
+      generateBtnText.textContent = "စစ်ဆေးနေပါသည်...";
+      cancelProcessBtn.classList.remove("hidden");
+      progressWrap.classList.remove("hidden");
+
+      try {
+        let frames = extractedFrames;
+        if (selectedVideoFile && frames.length !== sampleFrameCount) {
+          progressDetailText.textContent =
+            "အဆင့် (၁/၂) — ဗီဒီယိုအစမှ အဆုံးထိ အဓိက ဇာတ်ဝင်ခန်းများကို Browser ထဲတွင် ဆွဲထုတ်နေပါသည်။";
+          frames = await extractMovieKeyframes(sampleFrameCount);
+        }
+
+        if (cancelRequested) throw new Error("CANCELLED");
+
+        progressPhaseLabel.textContent = "AI ဖြင့် မြန်မာခေါင်းစဉ်များ နှင့် ဇာတ်လမ်းအကျဉ်း ရေးသားနေပါသည်...";
+        progressPercentLabel.textContent = "80%";
+        progressBarFill.style.width = "80%";
+        progressDetailText.textContent =
+          "အဆင့် (၂/၂) — ဆွဲဆောင်မှုရှိသော မြန်မာဇာတ်ကားခေါင်းစဉ် (၆) ခုနှင့် ဇာတ်လမ်းအကျဉ်းချုပ်ကို ထုတ်ပေးနေပါသည်။";
+
+        const { systemPrompt, userPrompt } = buildFullTitlesAndSummaryPrompt(frames);
+        const data = await callGeminiStructured(systemPrompt, userPrompt, frames, true);
+
+        progressPhaseLabel.textContent = "✓ မြန်မာခေါင်းစဉ်များ နှင့် ဇာတ်လမ်းအကျဉ်း ထုတ်ယူပြီးပါပြီ";
+        progressPercentLabel.textContent = "100%";
+        progressBarFill.style.width = "100%";
+        progressDetailText.textContent = "အောက်ပါ Output ကဏ္ဍတွင် နှစ်သက်ရာ မြန်မာခေါင်းစဉ်ကို ရွေးချယ်ပြီး ဇာတ်လမ်းအကျဉ်းကို Copy ကူးယူနိုင်ပါပြီ။";
+
+        if (Array.isArray(data.titles) && data.titles.length > 0) {
+          renderTitlesList(data.titles, true);
+        }
+        if (data.summaryMarkdown) {
+          renderSummaryOutput(data.summaryMarkdown);
+        }
+
+        titlesOutputCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (err) {
+        handleProcessError(err);
+      } finally {
+        isProcessing = false;
+        generateSpinner.classList.add("hidden");
+        generateBtnText.textContent = "✨ မြန်မာခေါင်းစဉ် + ဇာတ်လမ်းအကျဉ်း ထုတ်မည်";
+        cancelProcessBtn.classList.add("hidden");
+        updateActionButtonsState();
+      }
+    }
+
+    async function startQuickTitlesOnly() {
+      if (isProcessing) return;
+      if (!selectedVideoFile && !movieExtraNotes.value.trim() && !parsedSubtitleText) return;
+
+      isProcessing = true;
+      cancelRequested = false;
+      updateActionButtonsState();
+
+      titlesOnlySpinner.classList.remove("hidden");
+      titlesOnlyBtnText.textContent = "မြန်မာခေါင်းစဉ်များ ဖန်တီးနေသည်...";
+      cancelProcessBtn.classList.remove("hidden");
+      progressWrap.classList.remove("hidden");
+
+      try {
+        let framesToUse = extractedFrames;
+        // If video is uploaded but no frames extracted yet, grab 6 fast keyframes for quick title generation
+        if (selectedVideoFile && framesToUse.length === 0) {
+          progressDetailText.textContent = "ခေါင်းစဉ်ပေးရန် အဓိက ဇာတ်ဝင်ခန်း (၆) ခုကို အမြန်ဖမ်းယူနေပါသည်...";
+          framesToUse = await extractMovieKeyframes(6);
+        } else if (framesToUse.length > 8) {
+          // Pick 8 evenly spaced frames from already extracted frames for fast response
+          framesToUse = framesToUse.filter((_, idx) => idx % Math.ceil(framesToUse.length / 8) === 0);
+        }
+
+        if (cancelRequested) throw new Error("CANCELLED");
+
+        progressPhaseLabel.textContent = "🏷️ မြန်မာဇာတ်ကားခေါင်းစဉ်များ ဖန်တီးနေပါသည်...";
+        progressPercentLabel.textContent = "85%";
+        progressBarFill.style.width = "85%";
+        progressDetailText.textContent = "ပရိသတ် စိတ်ဝင်စားမည့် မြန်မာဇာတ်ကားခေါင်းစဉ် (၆) မျိုးကို AI ဖြင့် ရေးသားနေပါသည်။";
+
+        const { systemPrompt, userPrompt } = buildTitlesOnlyPrompt(framesToUse);
+        const data = await callGeminiStructured(systemPrompt, userPrompt, framesToUse, false);
+
+        progressPhaseLabel.textContent = "✓ မြန်မာဇာတ်ကားခေါင်းစဉ်များ ထုတ်ယူပြီးပါပြီ";
+        progressPercentLabel.textContent = "100%";
+        progressBarFill.style.width = "100%";
+
+        if (Array.isArray(data.titles) && data.titles.length > 0) {
+          renderTitlesList(data.titles, !selectedHeadlineTitle);
+          titlesOutputCard.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      } catch (err) {
+        handleProcessError(err);
+      } finally {
+        isProcessing = false;
+        titlesOnlySpinner.classList.add("hidden");
+        titlesOnlyBtnText.textContent = "🏷️ မြန်မာခေါင်းစဉ်များသာ သီးသန့်အမြန်ထုတ်မည်";
+        cancelProcessBtn.classList.add("hidden");
+        updateActionButtonsState();
+      }
+    }
+
+    function handleProcessError(err) {
+      if (err.message === "CANCELLED") {
+        progressPhaseLabel.textContent = "Process ကို ရပ်တန့်လိုက်ပါပြီ။";
+        progressBarFill.style.width = "0%";
+      } else {
+        progressPhaseLabel.textContent = "⚠️ အခက်အခဲ တစ်ခု ဖြစ်ပေါ်နေပါသည်";
+        progressDetailText.textContent =
+          `အကြောင်းအရင်း: ${err.message} (GitHub Pages တွင် သုံးနေပါက 🔑 API Key ထည့်သွင်းထားကြောင်း စစ်ဆေးပေးပါ)။`;
+        apiKeyCollapsible.classList.remove("hidden");
+      }
+    }
+
+    /********************************************************************
+     * RENDER MYANMAR TITLES CARD & INTERACTIVE SELECTION
+     ********************************************************************/
+    function renderTitlesList(titlesArray, selectFirstAsDefault = false) {
+      generatedTitlesList = titlesArray;
+      titlesOutputCard.classList.remove("hidden");
+      titlesListContainer.innerHTML = "";
+
+      if (selectFirstAsDefault && titlesArray[0]?.title) {
+        setActiveHeadlineTitle(titlesArray[0].title, false);
+      }
+
+      titlesArray.forEach((item, index) => {
+        const isSelected = item.title === selectedHeadlineTitle;
+        const card = document.createElement("div");
+        card.className = `title-card-item ${isSelected ? "selected-title" : ""}`;
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-lg" style="background-color: var(--bg-icon); color: var(--text-accent);">
+              ${escapeHtml(item.styleBadge || `ခေါင်းစဉ် #${index + 1}`)}
+            </span>
+            <span class="text-[11px] font-semibold" style="color: var(--text-muted);">
+              #${index + 1}
+            </span>
+          </div>
+          <div class="text-base font-bold leading-snug mb-1" style="color: var(--text-main);">
+            ${escapeHtml(item.title)}
+          </div>
+          <div class="text-xs leading-relaxed mb-3" style="color: var(--text-muted);">
+            ${escapeHtml(item.subtitleNote || "")}
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" class="copy-single-title-btn secondary-action-btn text-xs py-2 px-3 flex-1">
+              📋 Copy ကူးမည်
+            </button>
+            <button type="button" class="use-this-title-btn secondary-action-btn text-xs py-2 px-3 flex-1" style="${isSelected ? "border-color: var(--border-active); color: var(--text-accent);" : ""}">
+              ${isSelected ? "⭐ ရွေးချယ်ထားသည်" : "⭐ ဒီခေါင်းစဉ်သုံးမည်"}
+            </button>
+          </div>
+        `;
+
+        card.querySelector(".copy-single-title-btn").addEventListener("click", () => {
+          copyTextToClipboard(
+            item.title,
+            `✓ "${item.title}" ကို Copy ကူးပြီးပါပြီ!`,
+            titlesToast
+          );
+        });
+
+        card.querySelector(".use-this-title-btn").addEventListener("click", () => {
+          setActiveHeadlineTitle(item.title, true);
+          renderTitlesList(generatedTitlesList, false);
+        });
+
+        titlesListContainer.appendChild(card);
+      });
+    }
+
+    function setActiveHeadlineTitle(titleText, notifyToast = false) {
+      selectedHeadlineTitle = titleText;
+      activeBurmeseTitleText.textContent = titleText;
+
+      // Also sync into textarea if user is in edit mode
+      if (currentSummaryRawText) {
+        summaryTextarea.value = buildCombinedTitleAndSummaryText();
+      }
+
+      if (notifyToast) {
+        showToast(`⭐ "${titleText}" ကို အဓိကခေါင်းစဉ်အဖြစ် သတ်မှတ်လိုက်ပါပြီ!`, titlesToast);
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    /********************************************************************
+     * RENDER, EDIT, COPY & DOWNLOAD SUMMARY OUTPUT
+     ********************************************************************/
+    function formatMarkdownToHtml(raw) {
+      const escaped = escapeHtml(raw);
+      return escaped
+        .replace(/^###\s+(.+)$/gm, "<h3>$1</h3>")
+        .replace(/^##\s+(.+)$/gm, "<h3>$1</h3>")
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    }
+
+    function buildCombinedTitleAndSummaryText() {
+      const headline = selectedHeadlineTitle
+        ? `🎬 မြန်မာဇာတ်ကားခေါင်းစဉ် - ${selectedHeadlineTitle}\n========================================\n\n`
+        : "";
+      return headline + currentSummaryRawText;
+    }
+
+    function renderSummaryOutput(text) {
+      currentSummaryRawText = text.trim();
+      summaryFormattedView.innerHTML = formatMarkdownToHtml(currentSummaryRawText);
+      summaryTextarea.value = buildCombinedTitleAndSummaryText();
+
+      outputCard.classList.remove("hidden");
+    }
+
+    toggleEditModeBtn.addEventListener("click", () => {
+      isEditMode = !isEditMode;
+      if (isEditMode) {
+        summaryTextarea.value = buildCombinedTitleAndSummaryText();
+        summaryFormattedView.classList.add("hidden");
+        summaryEditWrapper.classList.remove("hidden");
+        toggleEditModeBtn.textContent = "✓ ဖတ်ရှုမည့်ပုံစံ";
+      } else {
+        currentSummaryRawText = summaryTextarea.value;
+        summaryFormattedView.innerHTML = formatMarkdownToHtml(currentSummaryRawText);
+        summaryEditWrapper.classList.add("hidden");
+        summaryFormattedView.classList.remove("hidden");
+        toggleEditModeBtn.textContent = "✏️ ပြင်ဆင်ရန်";
+      }
+    });
+
+    copySummaryBtn.addEventListener("click", () => {
+      const textToCopy = isEditMode
+        ? summaryTextarea.value
+        : buildCombinedTitleAndSummaryText();
+      if (!textToCopy) return;
+
+      copyTextToClipboard(
+        textToCopy,
+        "✓ မြန်မာခေါင်းစဉ် + ဇာတ်လမ်းအကျဉ်းကို Clipboard သို့ Copy ကူးပြီးပါပြီ!",
+        statusToast
+      );
+    });
+
+    downloadTxtBtn.addEventListener("click", () => {
+      const textToSave = isEditMode
+        ? summaryTextarea.value
+        : buildCombinedTitleAndSummaryText();
+      if (!textToSave) return;
+
+      const baseName = selectedVideoFile
+        ? selectedVideoFile.name.replace(/\.[^/.]+$/, "")
+        : "movie";
+      const blob = new Blob([textToSave], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${baseName}_myanmar_title_and_summary.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+      showToast("✓ .txt ဖိုင်အဖြစ် ဒေါင်းလုဒ်ဆွဲပြီးပါပြီ!", statusToast);
+    });
+
+    // Start app initialization
+    initApp();
+  </script>
+</body>
+</html>
